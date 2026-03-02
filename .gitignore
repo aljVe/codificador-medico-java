@@ -1,0 +1,14 @@
+# Maven build output
+target/
+
+# Logs y outputs de test
+test_output.txt
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# Python cache
+__pycache__/
+*.pyc
