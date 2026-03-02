@@ -30,8 +30,6 @@ Esta versión del proyecto está implementada en **Spring Boot 2.7 y Java 8**, d
 mvn spring-boot:run
 ```
 
-3. Abra su navegador en: [http://localhost:8080](http://localhost:8080)
-
 ### Testing
 
 El proyecto contiene una suite de pruebas que evalúan los algoritmos de búsqueda y la lógica del parseo del CSV. Para correr las pruebas manuales:
