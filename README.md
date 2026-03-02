@@ -5,7 +5,8 @@ Implementado con Spring Boot 2.7 + Java 8, empaquetable como WAR para despliegue
 
 ## Descripción
 
-Aplicación Java que sirve una REST API y un frontend estático para codificación CIE-10-ES:
+Aplicación para la estandarización de **diagnósticos principales en Medicina Interna, basado en el registro RECALMIN 2023**.
+Permite la búsqueda interactiva y la codificación CIE-10-ES y optimización APR-GDR:
 
 - **Motor de búsqueda server-side** agnóstico al orden de palabras.
 - **Árboles de decisión dinámicos** generados desde el texto normativo CSV.
@@ -19,11 +20,11 @@ Aplicación Java que sirve una REST API y un frontend estático para codificaci�
 
 ## Ejecución local
 
+Asegúrese de tener el archivo `base_datos_recalmin.csv` en la raíz del proyecto y ejecute:
+
 ```bash
 mvn spring-boot:run
 ```
-
-Acceda en: [http://localhost:8080](http://localhost:8080)
 
 ## Estructura del proyecto
 
