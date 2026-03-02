@@ -50,8 +50,4 @@ src/test/java/                    # Tests JUnit
 mvn test
 ```
 
-## Autor
 
-**Alejandro Venegas Robles** — MIR Medicina Interna
-Hospital Clínico Universitario Lozano Blesa, Zaragoza
-alejandro2196vr@gmail.com
