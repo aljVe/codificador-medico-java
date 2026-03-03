@@ -10,7 +10,7 @@ Esta versión del proyecto está implementada en **Spring Boot 2.7 y Java 8**, d
 
 - **Arquitectura Cliente-Servidor:** Separa la capa lógica y la de presentación, permitiendo centralizar la base de datos normativa en un servidor seguro.
 - **Motor de Búsqueda Server-Side:** La API REST en Java expone un endpoint de cálculo *agnóstico al orden de palabras*, delegando el peso computacional al backend.
-- **Árboles de Decisión Estructurados:** Modela en memoria caché las opciones complejas de diagnóstico mediante estructuras orientadas a objetos (`TreeNode`, `TreeOption`), extraídas dinámicamente del CSV maestro.
+- **Árboles de Decisión Dinámicos con Código Exacto:** Modela en memoria caché las opciones complejas de diagnóstico mediante estructuras orientadas a objetos (`TreeNode`, `TreeOption`), y resuelve ensamblando el código CIE-10 final y exacto basado en el árbol construido desde el CSV maestro.
 - **Frontend Embebido:** Incluye la Single Page Application (SPA) lista para servirse estáticamente en la raíz del backend.
 - **Cobertura de Tests:** Verifica automáticamente casos de prueba límite (ej. manejo de aislamientos por comas/corchetes) usando `JUnit`.
 
