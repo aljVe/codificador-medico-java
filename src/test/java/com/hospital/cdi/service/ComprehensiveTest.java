@@ -49,7 +49,8 @@ public class ComprehensiveTest {
                 // SDRA (was broken, expecting tree, now should be 'simple' placeholder)
                 List<MedicalItem> sdra = dataService.search("sdra");
                 assertTrue(sdra.size() > 0);
-                assertEquals("simple", sdra.get(0).getType(), "SDRA ya no debe requerir un árbol de botones.");
+                assertEquals("simple", sdra.get(0).getType(),
+                                "SDRA ya no debe requerir un árbol de botones.");
 
                 // Crisis renal (was broken, expecting tree, now 'simple')
                 List<MedicalItem> crisis = dataService.search("crisis renal esclerodermica");
@@ -59,21 +60,17 @@ public class ComprehensiveTest {
                 // Neoplasia origen desconocido (was broken, expecting tree, now 'simple')
                 List<MedicalItem> cpo = dataService.search("cancer de origen desconocido");
                 assertTrue(cpo.size() > 0);
-                assertEquals("simple", cpo.get(0).getType(), "Cancer de origen desconocido no tiene opciones");
+                assertEquals("simple", cpo.get(0).getType(),
+                                "Cancer de origen desconocido no tiene opciones");
 
-                // Neumonia (was broken, expecting simple, but HAS bracket options, so it MUST
-                // be a tree)
                 List<MedicalItem> neumonia = dataService.search("neumonia");
-                // Warning: This depends on the specific query matching the *correct* pneumonia
-                // row from the CSV
-                // In this CSV, it's just "neumonia". It might match multiple if there's
-                // "neumonia por vrs"
                 MedicalItem mainPneumonia = neumonia.stream()
                                 .filter(item -> item.getTerms().contains("neumonia"))
                                 .findFirst().orElse(null);
 
                 assertTrue(mainPneumonia != null, "Debe existir neumonia");
-                assertEquals("tree", mainPneumonia.getType(), "Neumonia TIENE corchetes con barras, debe ser 'tree'");
+                assertEquals("tree", mainPneumonia.getType(),
+                                "Neumonia TIENE corchetes con barras, debe ser 'tree'");
         }
 
         @Test
@@ -146,5 +143,75 @@ public class ComprehensiveTest {
                                 "Como solo hay 1 corchete de opciones, esta opción debe tener un valor final");
                 assertTrue(opts.get(0).getValue().contains("Dispositivo: Ninguno"),
                                 "El resultado final debe incluir el dispositivo hardcodeado");
+        }
+
+        @Test
+        public void testCie10CodesAreLoaded() {
+                List<MedicalItem> results = dataService.search("insuficiencia cardiaca");
+                MedicalItem ic = results.stream()
+                                .filter(item -> item.getTerms().contains("insuficiencia cardiaca"))
+                                .findFirst().orElse(null);
+
+                assertTrue(ic != null, "Debe existir la insuficiencia cardiaca");
+                assertEquals("I50.[Sistólica:2|Diastólica:3|Combinada:4][Aguda:1|Crónica:2|Crónica agudizada:3]",
+                                ic.getCode(), "Debe tener el código CIE-10 dinámico correcto");
+
+                List<MedicalItem> results2 = dataService.search("pancreatitis");
+                MedicalItem panc = results2.stream()
+                                .filter(item -> item.getTerms().contains("pancreatitis"))
+                                .findFirst().orElse(null);
+                assertTrue(panc != null);
+                assertEquals("K85.[Biliar:1|Alcohólica:2|Idiopática:0]0", panc.getCode(),
+                                "Debe tener el código CIE-10 correcto dinámico");
+        }
+
+        @Test
+        public void testCodeResolutionInTree() {
+                List<MedicalItem> results = dataService.search("insuficiencia cardiaca");
+                MedicalItem ic = results.stream()
+                                .filter(item -> item.getTerms().contains("insuficiencia cardiaca"))
+                                .findFirst().orElse(null);
+
+                assertTrue(ic != null);
+                // Level 0: Aguda / Crónica / Crónica agudizada
+                com.hospital.cdi.model.TreeOption l0_opt = ic.getRoot().getOptions().get(0); // "Aguda"
+                assertEquals("Aguda", l0_opt.getLabel());
+
+                // Level 1: Sistólica / Diastólica / Combinada
+                com.hospital.cdi.model.TreeOption l1_opt = l0_opt.getNext().getOptions().get(0); // "Sistólica"
+                assertEquals("Sistólica", l1_opt.getLabel());
+
+                // Final code should be resolved to I50.21
+                assertEquals("I50.21", l1_opt.getCode(), "El código debe resolverse exactamente en el nodo final");
+        }
+
+        @Test
+        public void testCodeResolutionMoreDiseases() {
+                // TEP
+                MedicalItem tep = dataService.search("tromboembolismo pulmonar").stream()
+                                .filter(i -> i.getTerms().contains("tep")).findFirst().orElse(null);
+                assertTrue(tep != null);
+                com.hospital.cdi.model.TreeOption tepConCor = tep.getRoot().getOptions().get(0); // "con"
+                assertEquals("I26.09", tepConCor.getCode(), "TEP con Cor Pulmonale resuelve a I26.09");
+
+                // Pancreatitis
+                MedicalItem panc = dataService.search("pancreatitis").stream()
+                                .filter(i -> i.getTerms().contains("pancreatitis")).findFirst().orElse(null);
+                assertTrue(panc != null);
+                // [Biliar / Alcohólica / Idiopática] -> [sin / con] -> [estéril / infectada]
+                // Let's test Idiopática -> con -> infectada -> K85.00
+                com.hospital.cdi.model.TreeOption p0 = panc.getRoot().getOptions().get(2); // "Idiopática"
+                assertEquals("Idiopática", p0.getLabel());
+                com.hospital.cdi.model.TreeOption p1 = p0.getNext().getOptions().get(1); // "con"
+                com.hospital.cdi.model.TreeOption p2 = p1.getNext().getOptions().get(1); // "infectada"
+                assertEquals("K85.00", p2.getCode(), "Pancreatitis Idiopática con necrosis infectada = K85.00");
+
+                // Neumonia (Hipoxémica)
+                MedicalItem neu = dataService.search("neumonia").stream()
+                                .filter(i -> i.getTerms().contains("neumonia")).findFirst().orElse(null);
+                assertTrue(neu != null);
+                com.hospital.cdi.model.TreeOption hipoxemica = neu.getRoot().getOptions().get(0); // "Hipoxémica"
+                assertEquals("J15.9", hipoxemica.getCode(),
+                                "Neumonia base resolved to J15.9 since options don't have code mappings");
         }
 }

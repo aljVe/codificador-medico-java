@@ -9,7 +9,8 @@ public class MedicalItem {
     private String type;
     private List<String> terms;
     private String alert;
-    private String value; 
+    private String value;
+    private String code;
     private TreeNode root;
     private boolean isFromCsv;
 }

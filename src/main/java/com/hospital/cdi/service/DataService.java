@@ -65,14 +65,15 @@ public class DataService {
 
                     // Parse semicolon-delimited strategy, retaining empty columns
                     String[] parts = line.split(";", -1);
-                    if (parts.length < 5)
+                    if (parts.length < 6)
                         continue;
 
                     String tipo = parts[0].trim();
                     String terminos = parts[1].trim();
                     String alerta = parts[2].trim();
                     String texto = parts[3].trim();
-                    String requiereArbolStr = parts[4].trim();
+                    String codigo = parts[4].trim();
+                    String requiereArbolStr = parts[5].trim();
 
                     boolean isTree = "TRUE".equalsIgnoreCase(requiereArbolStr);
 
@@ -81,6 +82,7 @@ public class DataService {
                     item.setTerms(Arrays.asList(terminos.split("\\|")));
                     item.setAlert(alerta);
                     item.setValue(texto);
+                    item.setCode(codigo);
                     item.setFromCsv(true);
 
                     // Type mapping for dynamic frontend rendering
@@ -138,15 +140,16 @@ public class DataService {
         }
 
         if (allOptions.isEmpty()) {
-            item.setType("tree_placeholder");
+            item.setType("simple");
             return;
         }
 
         item.setType("tree");
-        item.setRoot(createNode(template, brackets, allOptions, 0));
+        item.setRoot(createNode(template, item.getCode(), brackets, allOptions, 0));
     }
 
-    private TreeNode createNode(String currentTemplate, List<String> brackets, List<List<String>> allOptions,
+    private TreeNode createNode(String currentTemplate, String currentCodeTemplate, List<String> brackets,
+            List<List<String>> allOptions,
             int level) {
         if (level >= allOptions.size())
             return null;
@@ -157,15 +160,40 @@ public class DataService {
         List<TreeOption> treeOptions = new ArrayList<>();
         for (String opt : currentOptions) {
             String newTemplate = currentTemplate.replace(brackets.get(level), opt);
+            String newCodeTemplate = resolveCodeForOption(currentCodeTemplate, opt);
+
             if (isLastLevel) {
-                treeOptions.add(new TreeOption(opt, newTemplate));
+                treeOptions.add(new TreeOption(opt, newTemplate, newCodeTemplate));
             } else {
-                TreeNode nextNode = createNode(newTemplate, brackets, allOptions, level + 1);
+                TreeNode nextNode = createNode(newTemplate, newCodeTemplate, brackets, allOptions, level + 1);
                 treeOptions.add(new TreeOption(opt, nextNode));
             }
         }
 
         return new TreeNode("Seleccione opción:", treeOptions);
+    }
+
+    private String resolveCodeForOption(String currentCodeTemplate, String selectedOption) {
+        if (currentCodeTemplate == null || currentCodeTemplate.trim().isEmpty()) {
+            return currentCodeTemplate;
+        }
+
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("\\[([^\\]]+)\\]");
+        java.util.regex.Matcher matcher = pattern.matcher(currentCodeTemplate);
+
+        while (matcher.find()) {
+            String fullBracket = matcher.group(0);
+            String content = matcher.group(1);
+
+            String[] mappings = content.split("\\|");
+            for (String mapping : mappings) {
+                String[] parts = mapping.split(":", 2);
+                if (parts.length == 2 && parts[0].trim().equals(selectedOption)) {
+                    return currentCodeTemplate.replace(fullBracket, parts[1].trim());
+                }
+            }
+        }
+        return currentCodeTemplate;
     }
 
     /**
