@@ -69,8 +69,14 @@ function calculateSimilarity(str1, str2) {
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+let medicalData = [];
+
+document.addEventListener('DOMContentLoaded', async () => {
     try {
+        const response = await fetch('/api/all');
+        if (!response.ok) throw new Error("Failed to fetch medical data");
+        medicalData = await response.json();
+
         const searchInput = document.getElementById('searchInput');
         const resultsContainer = document.getElementById('resultsContainer');
 
