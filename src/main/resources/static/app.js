@@ -69,14 +69,8 @@ function calculateSimilarity(str1, str2) {
     }
 }
 
-let medicalData = [];
-
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', () => {
     try {
-        const response = await fetch('/api/all');
-        if (!response.ok) throw new Error("Failed to fetch medical data");
-        medicalData = await response.json();
-
         const searchInput = document.getElementById('searchInput');
         const resultsContainer = document.getElementById('resultsContainer');
 
@@ -306,16 +300,40 @@ function renderDynamicForm(item, container) {
 
         function updatePreview() {
             let finalString = baseText;
+            let finalCode = item.code || '';
+
             matches.forEach((m, i) => {
                 const ctrl = controls[i];
                 let val = ctrl.value;
                 if (!val || val.trim() === '') {
                     val = `[${m.inside}]`; // Mantiene corchete como placeholder si está vacío
+                } else {
+                    if (finalCode) {
+                        const codeRegex = /\[(.*?)\]/g;
+                        let codeMatch;
+                        let newCode = finalCode;
+                        let replaced = false;
+                        while ((codeMatch = codeRegex.exec(finalCode)) !== null) {
+                            const fullBracket = codeMatch[0];
+                            const content = codeMatch[1];
+                            const mappings = content.split('|');
+                            for (let mapping of mappings) {
+                                const parts = mapping.split(':');
+                                if (parts.length === 2 && parts[0].trim() === val) {
+                                    newCode = newCode.replace(fullBracket, parts[1].trim());
+                                    replaced = true;
+                                    break;
+                                }
+                            }
+                            if (replaced) break;
+                        }
+                        finalCode = newCode;
+                    }
                 }
                 finalString = finalString.replace(m.fullMatch, val);
             });
-            if (item.code && item.code.trim() !== '') {
-                finalString += ` (CIE-10: ${item.code})`;
+            if (finalCode && finalCode.trim() !== '') {
+                finalString += ` (CIE-10: ${finalCode})`;
             }
             previewContainer.textContent = finalString;
         }
